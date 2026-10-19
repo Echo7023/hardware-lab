@@ -13,8 +13,8 @@
 - **当前阶段**：打基础 —— 01 已实践（理线盒），02 / 03 可开工，04 / 06 待补装备
 - **设备就绪度**：7 个主题中 3 个可开工（01 已实践 / 02 / 03）；唯一真缺口是 ESP32 套件 → [docs/shopping-list.md](docs/shopping-list.md)
 - **已完成**：桌面下理线盒（[01](01-cad-3d-printing/)）
-- **正在做**：敲定 ESP32 套件采购
-- **下一步**：① 下单 ESP32 套件；② 家里电脑接入 → [docs/new-machine-setup.md](docs/new-machine-setup.md)；③ 挑一件小事把 02 或 03 用起来
+- **正在做**：下单采购 —— ESP32 全套套件 + 焊接练习耗材（规格已敲定）
+- **下一步**：① 下单 → [docs/shopping-list.md](docs/shopping-list.md)；② 家里电脑接入 → [docs/new-machine-setup.md](docs/new-machine-setup.md)；③ 到货前先用 02 / 03 动手
 
 ## 目录导航
 
