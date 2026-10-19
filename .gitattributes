@@ -1,0 +1,14 @@
+# 统一换行风格，避免不同系统之间的差异
+* text=auto eol=lf
+
+# ============================================================
+# 大文件（STL / STEP / 视频）暂不纳入版本管理。
+# 将来决定启用 Git LFS 时，安装 git-lfs 后取消下面注释即可：
+#   *.stl   filter=lfs diff=lfs merge=lfs -text
+#   *.step  filter=lfs diff=lfs merge=lfs -text
+#   *.stp   filter=lfs diff=lfs merge=lfs -text
+#   *.3mf   filter=lfs diff=lfs merge=lfs -text
+#   *.obj   filter=lfs diff=lfs merge=lfs -text
+#   *.mp4   filter=lfs diff=lfs merge=lfs -text
+#   *.mov   filter=lfs diff=lfs merge=lfs -text
+# ============================================================
