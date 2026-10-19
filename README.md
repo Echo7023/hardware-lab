@@ -10,11 +10,11 @@
 
 > 每次开工 / 收尾顺手更新下面几行，让仓库自己告诉你「接着干什么」。
 
-- **当前阶段**：打基础 —— 01 已实践（理线盒），02 / 03 可开工，04 / 06 待补装备
-- **设备就绪度**：7 个主题中 3 个可开工（01 已实践 / 02 / 03）；唯一真缺口是 ESP32 套件 → [docs/shopping-list.md](docs/shopping-list.md)
+- **当前阶段**：打基础 —— 01 已实践；02 / 03 器材齐全；04 / 06 只差一块 ESP32
+- **设备就绪度**：7 个主题中 3 个已就绪（01 已实践 / 02 / 03），04 / 06 只缺 MCU → [docs/tools.md](docs/tools.md)
 - **已完成**：桌面下理线盒（[01](01-cad-3d-printing/)）
-- **正在做**：下单采购 —— ESP32 全套套件 + 焊接练习耗材（规格已敲定）
-- **下一步**：① 下单 → [docs/shopping-list.md](docs/shopping-list.md)；② 家里电脑接入 → [docs/new-machine-setup.md](docs/new-machine-setup.md)；③ 到货前先用 02 / 03 动手
+- **正在做**：待下单 ESP32 全套套件（36 件）
+- **下一步**：① 下单 → [docs/shopping-list.md](docs/shopping-list.md)；② 家里电脑接入 → [docs/new-machine-setup.md](docs/new-machine-setup.md)；③ 到货前用 02 在这几块洞洞板上练焊点
 
 ## 目录导航
 
