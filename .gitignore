@@ -4,14 +4,32 @@ Thumbs.db
 *.swp
 *~
 
-# 大文件暂不纳入版本管理（将来可切换到 Git LFS，见 .gitattributes）
-# *.stl
-# *.step
-# *.stp
-# *.3mf
-# *.obj
-# *.mp4
-# *.mov
+# 媒体素材：文件本体只留本地，不进仓库
+# 约定见 README「说明 · 媒体素材规则」
+# 1) 媒体目录整体排除，避免 git add . 误收照片 / 视频 / 模型
+media/*
+projects/*/media/*
+# 2) 重体积 / 二进制扩展名兜底
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.wmv
+*.webm
+*.flv
+*.wav
+*.m4a
+*.heic
+*.tif
+*.tiff
+*.stl
+*.obj
+*.3mf
+*.f3d
+*.igs
+*.iges
+# 注：*.step / *.stp 是文本格式、体积小，故意不排除，可正常入库（放 cad/）
+# 注：若想让 media/ 目录里保留说明文件，用 git add -f 单独加入
 
 # 常见构建 / 缓存产物
 node_modules/
