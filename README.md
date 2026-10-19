@@ -42,7 +42,7 @@
 收尾：             git add .  →  git commit -m "说明"  →  git push
 ```
 
-每台电脑首次使用需配置一次凭据（推荐 SSH key，配好后无需再输入密码/Token）。
+每台电脑首次使用需配置一次凭据（推荐 SSH key，配好后无需再输入密码/Token）。详细步骤见 [docs/setup-ssh.md](docs/setup-ssh.md)。
 
 ## 说明
 
