@@ -15,6 +15,7 @@
 - **已完成**：桌面下理线盒（[01](01-cad-3d-printing/)）
 - **正在做**：待下单 ESP32 全套套件（36 件）
 - **下一步**：① 下单 → [docs/shopping-list.md](docs/shopping-list.md)；② 家里电脑接入 → [docs/new-machine-setup.md](docs/new-machine-setup.md)；③ 到货前用 02 在这几块洞洞板上练焊点
+- **跨设备交接**：换电脑先读 [docs/progress.md](docs/progress.md) —— 详细快照（软件环境已就绪、店家资料怎么拿到手、失败项目重启待补）
 
 ## 目录导航
 
