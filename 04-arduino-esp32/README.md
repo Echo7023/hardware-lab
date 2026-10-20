@@ -8,16 +8,16 @@
 | 层 | 状态 | 说明 |
 | --- | --- | --- |
 | Arduino IDE | 已装 | IDE 2.x |
-| ESP32 板卡支持包 | 已装 | **3.3.10-cn**（国内镜像版） |
+| ESP32 板卡支持包 | 已装 | **3.3.12**（官方正式版）；核心与工具链已核对完整 |
 | CH340 USB 驱动 | 已装 | 板载 USB 芯片是 CH340，本机驱动已就绪 |
 | ESP32 开发板 | 待接入 | 套件下单中 → [docs/shopping-list.md](../docs/shopping-list.md) |
 
-### 装机时踩的坑：官方包下载超时 → 改用国内镜像
+### 装机时踩的坑：官方包下载超时（后来自己好了）
 
-**症状**：`Failed to install platform: 'esp32:esp32:3.3.12'` / `Download failed: ... 185.199.110.133 ... timed out`
-**原因**：官方包走 GitHub 发布资源（`objects.githubusercontent.com`），本机网络连不上这个 CDN。
+**当时的症状**（2026-10-19）：`Failed to install platform: 'esp32:esp32:3.3.12'` / `Download failed: ... 185.199.110.133 ... timed out`
+**原因**：官方包走 GitHub 发布资源（`objects.githubusercontent.com`），那天本机网络连不上这个 CDN。
 
-**解法（已生效，换电脑照做）**
+**备用方案：换国内镜像（留着，官方再超时时用）**
 
 1. IDE → 文件 → 首选项 → 附加开发板管理器网址，填入：
 
@@ -25,17 +25,21 @@
    https://jihulab.com/esp-mirror/espressif/arduino-esp32/-/raw/gh-pages/package_esp32_index_cn.json
    ```
 
-2. 开发板管理器搜 `esp32`，选**带 `-cn` 后缀**的版本安装（如 `3.3.10-cn`），装完**重启 IDE**。
-3. **关掉「自动更新」** —— 自动更新会去取非 `-cn` 的包，同样会失败。
+2. 开发板管理器搜 `esp32`，选**带 `-cn` 后缀**的版本安装（该源最高是 `3.3.10-cn`），装完**重启 IDE**。
+
+**现状（2026-10-20 核实）**：官方源又能下载了，已换成 **官方 3.3.12**，`-cn` 那个版本已不在本机。
 
 **核对安装是否完整**（两条路径都该存在）：
 
 ```text
-%LOCALAPPDATA%\Arduino15\packages\esp32\hardware\esp32\3.3.10-cn\   ← 核心 + boards.txt
-%LOCALAPPDATA%\Arduino15\packages\esp32\tools\esp-x32\2601-cn\bin\  ← 编译器工具链
+%LOCALAPPDATA%\Arduino15\packages\esp32\hardware\esp32\3.3.12\   ← 核心 + boards.txt + installed.json
+%LOCALAPPDATA%\Arduino15\packages\esp32\tools\esp-x32\2601\bin\  ← 编译器工具链（-cn 版对应 ...\2601-cn\）
 ```
 
-> 版本差异说明：想要 3.3.12 但装成了 3.3.10-cn，**对 ESP32 Dev Module 入门没有影响**，不必重装。
+> **源怎么配（结论）**：首选项里的源只决定「开发板管理器能列出 / 安装哪些版本」，**不影响编译上传** —— 那靠的是本地已装的核心。
+> - 已装的 `3.3.12` 只存在于官方索引；jihulab 的 `-cn` 索引最高只到 `3.3.10-cn` → 只留 `-cn` 源也能正常干活，但管理器里**看不到 3.3.12**。
+> - 所以：**别在开发板管理器里对 `esp32` 点「移除」**，否则 3.3.12 没了只能重下。
+> - 想让管理器也跟得上最新版，就把官方源 `https://espressif.github.io/arduino-esp32/package_esp32_index.json` 一起留着当主源，jihulab 留作官方超时时的备用。
 
 ### 板子插上电脑后的三个坑
 
