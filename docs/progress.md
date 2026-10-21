@@ -15,7 +15,7 @@
 | ESP32 软件环境 | 已完成（已核实） | Arduino IDE 2.x + ESP32 核心 **3.3.12**（官方正式版）+ CH340 驱动 → [04 主题](../04-arduino-esp32/) |
 | ESP32 全套套件（36 件） | **未下单** | 等优惠活动，计划下单 |
 | 店家学习资料 | 已到手并分析完（单位机） | 见第 2、3 节；**不进仓库** |
-| 失败项目重启 | **已立项，暂停待重启** | 第 2 个实践项目「电气玩具」→ [projects/02-electric-toy](../projects/02-electric-toy/)；原文档在 [electric-toy](https://github.com/Echo7023/electric-toy) |
+| 失败项目重启 | **已立项，暂停待重启** | 第 2 个实践项目「电气玩具」→ [projects/02-electric-toy](../projects/02-electric-toy/)；原独立仓库已冻结归档 |
 | 家里电脑接入 | 未做 | 照 [new-machine-setup.md](new-machine-setup.md) |
 
 **本轮仓库改动**（家里电脑 `git pull` 后即可看到）：
@@ -23,7 +23,7 @@
 - 新建本文件（跨设备交接快照）
 - 04 主题 README：新增「环境状态 / 装机镜像解法 / 插板三坑」，并更正核心版本为 **3.3.12**、补上「源怎么配」的结论
 - 新建 [projects/02-electric-toy](../projects/02-electric-toy/)：第 2 个实践项目的状态、烧板根因分析、重启清单、ESP32 迁移方案
-- [projects/README.md](../projects/README.md)：从「预留」改为真正的项目登记表
+- electric-toy 的**全部文件已并入** `projects/02-electric-toy/`（原仓库冻结归档），`projects/README.md` 改为项目登记表 + 总索引
 
 ---
 
@@ -87,11 +87,10 @@
 **状态：硬件已焊完，主控 STC8G1K08 烧毁，暂停待重启。** 详细复盘与重启清单：
 [projects/02-electric-toy](../projects/02-electric-toy/)
 
-**项目原文档不在本仓库**，在独立仓库（设计文档 / 接线图 / 外壳 3D / SDCC 固件都在那）：
+**项目文件已并入本仓库**（2026-10-21 从独立仓库整体复制），原 [electric-toy](https://github.com/Echo7023/electric-toy) 仓库**冻结归档、只读**，以后只改本仓库这一份。
 
-```powershell
-git clone https://github.com/Echo7023/electric-toy.git
-```
+> 仓库组织已定为**单仓库**：项目直接放 `projects/`，跨设备只 `pull` / `push` 一次。
+> `projects/README.md` 是总索引（编号 / 名称 / 一句话 / 状态 / 路径），找项目从那里进。
 
 ### 换电脑开工前先看这三条
 

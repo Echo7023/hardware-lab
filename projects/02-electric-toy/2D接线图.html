@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>电气玩具 · 2D 接线平面图</title>
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:#0b0e13;color:#e8edf2;
+    font-family:"Segoe UI","Microsoft YaHei",sans-serif}
+  #wrap{position:absolute;inset:0;display:flex}
+  #stage{position:relative;flex:1 1 auto;min-width:0}
+  #svg{position:absolute;inset:0;width:100%;height:100%;cursor:grab;touch-action:none}
+  #svg.panning{cursor:grabbing}
+  .wire{fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .hit{fill:none;stroke:transparent;stroke-width:14;pointer-events:stroke;cursor:pointer}
+  .pbox{stroke:#5b7fa8;stroke-width:1.1}
+  .cname{font-size:12.5px;font-weight:600;fill:#ffffff;text-anchor:middle;
+    dominant-baseline:middle;pointer-events:none}
+  .plbl{font-size:11px;text-anchor:middle;dominant-baseline:middle;pointer-events:none}
+  .plbl.on{fill:#ffd98a}
+  .plbl.off{fill:#7b8899}
+
+  #title{position:absolute;top:12px;left:16px;z-index:5;pointer-events:none}
+  #title h1{margin:0;font-size:16px;font-weight:600}
+  #title p{margin:4px 0 0;font-size:11px;color:#8a99ad;width:430px;line-height:1.6}
+  #tip{position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:6;
+    background:rgba(31,111,235,.94);color:#fff;font-size:13px;font-weight:600;
+    padding:7px 14px;border-radius:7px;display:none;pointer-events:none;
+    box-shadow:0 4px 18px rgba(0,0,0,.45);white-space:nowrap;max-width:60vw;
+    overflow:hidden;text-overflow:ellipsis}
+  #hint{position:absolute;bottom:12px;left:16px;z-index:5;font-size:11px;color:#7a8696;
+    background:rgba(20,25,32,.7);padding:6px 10px;border-radius:6px;border:1px solid #2a323c}
+  #hint b{color:#9bc}
+
+  #side{flex:0 0 320px;display:flex;flex-direction:column;min-height:0;
+    border-left:1px solid #2a323c;background:#12171e}
+  #panel{flex:0 0 auto;padding:12px 14px;border-bottom:1px solid #2a323c}
+  #panel h2,#list h2{margin:0 0 8px;font-size:12.5px;color:#7fb3ff;
+    border-bottom:1px solid #2a323c;padding-bottom:6px}
+  #pinBtn{width:100%;background:#1f6feb;color:#fff;border:1px solid #4a90e2;border-radius:6px;
+    padding:8px 10px;font-size:12.5px;font-weight:600;cursor:pointer;transition:.15s}
+  #pinBtn:hover{background:#2a7ff5}
+  #panel .grp{margin:10px 0 0;font-size:12px;color:#d6dde6}
+  .lg{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:6px}
+  .lg span{display:flex;align-items:center;gap:5px;font-size:10.5px;color:#9aa8b8}
+  .lg i{width:14px;height:3px;border-radius:2px;display:block}
+  .note{margin-top:9px;padding-top:9px;border-top:1px dashed #2a323c;
+    font-size:10.5px;color:#8a99ad;line-height:1.7}
+
+  #list{flex:1 1 auto;min-height:0;overflow-y:auto;padding:12px 14px}
+  #list .cap{font-size:10px;color:#7a8696;margin:-3px 0 7px;line-height:1.5}
+  .witem{display:flex;align-items:center;gap:7px;font-size:11px;padding:3px 6px;
+    border-radius:4px;cursor:pointer;color:#b9c6d6;transition:.12s}
+  .witem:hover{background:#232c38;color:#fff}
+  .witem.on{background:#1f6feb;color:#fff}
+  .witem i{width:12px;height:3px;border-radius:2px;display:block;flex:0 0 auto}
+  .witem b{font-weight:600;color:#cfe0f5}
+  .witem.on b{color:#fff}
+
+  #panelToggle{position:absolute;right:12px;bottom:12px;z-index:8;background:#1f6feb;color:#fff;
+    border:1px solid #4a90e2;border-radius:6px;padding:7px 12px;font-size:12px;font-weight:600;
+    cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,.45);transition:.15s}
+  #panelToggle:hover{background:#2a7ff5}
+  #side.hidden{display:none}
+</style>
+</head>
+<body>
+
+<div id="wrap">
+  <div id="stage">
+    <svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div id="title">
+      <h1>电气玩具 · 2D 接线平面图</h1>
+      <p>俯视平面：每个元件是一个方框，引脚画在方框边上并标注丝印名，引脚之间用线路连接。鼠标移到任意一根线或右侧清单项上，其余线自动隐去，只突出这一根。</p>
+    </div>
+    <div id="tip"></div>
+    <div id="hint"><b>滚轮</b>=缩放 · <b>拖动</b>=平移 · <b>双击</b>=复位视图 · <b>Esc</b>=取消锁定</div>
+    <button id="panelToggle">隐藏面板</button>
+  </div>
+
+  <aside id="side">
+    <section id="panel">
+      <h2>显示控制</h2>
+      <button id="pinBtn">引脚：全部展现</button>
+      <div class="grp">
+        线色图例
+        <div class="lg">
+          <span><i style="background:#ff4d4d"></i>7.4V</span>
+          <span><i style="background:#4a4a4a"></i>GND</span>
+          <span><i style="background:#ffb020"></i>5V</span>
+          <span><i style="background:#b06bff"></i>PWM/方向</span>
+          <span><i style="background:#25c8c8"></i>ADC 滑条</span>
+          <span><i style="background:#38c26b"></i>编码A</span>
+          <span><i style="background:#8ae04a"></i>编码B</span>
+          <span><i style="background:#ffd400"></i>电机动力</span>
+          <span><i style="background:#9aa6b5"></i>按键</span>
+          <span><i style="background:#66d9ff"></i>烧录 UART</span>
+          <span><i style="background:#e0e0e0"></i>电芯中线</span>
+        </div>
+      </div>
+      <div class="note">
+        未接线：MCU 的备用 VCC/GND（T_GND2 / T_VCC2 / B_GND1 / B_VCC1 / R_VCC）、P16/P17/P30/P31/P34/P35/P36（右侧 TX=P31、RX=P30，与下排 P31/P30 同一网络）；CH340 的 VCC；TB6612 的 PWMB 与多余 GND（BIN1/BIN2 已接地）；开关机的 SW+/SW−；充电板的 VIN/GND。
+      </div>
+    </section>
+
+    <section id="list">
+      <h2>接线清单（39 根 = 36 常接 + 3 仅烧录）</h2>
+      <div class="cap">悬停=临时高亮 · 点击=锁定，再次点击取消。<b>#</b> 为该丝印在元件内出现的次序（按引脚排列）。</div>
+      <div id="listBody"></div>
+    </section>
+  </aside>
+</div>
+
+<script>
+// ============================================================
+// 元件数据（沿用 3D 清晰版，引脚丝印与排列顺序完全一致）
+// o = [x,y] 引脚在实物上的相对位置，用来判定它长在方框的哪一条边上
+// ============================================================
+const COMPS = [
+  { id:'mcu', name:'STC8G1K08 开发板', sub:'SOP16 最小系统板 · 24MHz',
+    shape:{w:36,h:24}, pos:[110,320],
+    pins:[
+      {k:'T_GND1',sn:'GND',o:[-15.3,12]},
+      {k:'T_VCC1',sn:'VCC',o:[-11.9,12]},
+      {k:'T_GND2',sn:'GND',o:[-8.5,12]},
+      {k:'P55',   sn:'P55',o:[-5.1,12]},
+      {k:'T_VCC2',sn:'VCC',o:[-1.7,12]},
+      {k:'P54',   sn:'P54',o:[1.7,12]},
+      {k:'P17',   sn:'P17',o:[5.1,12]},
+      {k:'P16',   sn:'P16',o:[8.5,12]},
+      {k:'P11',   sn:'P11',o:[11.9,12]},
+      {k:'P10',   sn:'P10',o:[15.3,12]},
+      {k:'B_GND1',sn:'GND',o:[-15.3,-12]},
+      {k:'B_VCC1',sn:'VCC',o:[-11.9,-12]},
+      {k:'P30',   sn:'P30',o:[-8.5,-12]},
+      {k:'P31',   sn:'P31',o:[-5.1,-12]},
+      {k:'P32',   sn:'P32',o:[-1.7,-12]},
+      {k:'P33',   sn:'P33',o:[1.7,-12]},
+      {k:'P34',   sn:'P34',o:[5.1,-12]},
+      {k:'P35',   sn:'P35',o:[8.5,-12]},
+      {k:'P36',   sn:'P36',o:[11.9,-12]},
+      {k:'P37',   sn:'P37',o:[15.3,-12]},
+      {k:'R_VCC', sn:'VCC',o:[18,4.5]},
+      {k:'TX',    sn:'TX', o:[18,1.5]},
+      {k:'RX',    sn:'RX', o:[18,-1.5]},
+      {k:'R_GND', sn:'GND',o:[18,-4.5]}
+    ]},
+
+  { id:'ttl', name:'CH340 USB-TTL 烧录模块', sub:'仅烧录时接 · VCC 不接 · 烧完拔掉',
+    shape:{w:26,h:20}, pos:[470,200],
+    pins:[
+      {k:'TXD',sn:'TXD',o:[-13,4]},
+      {k:'RXD',sn:'RXD',o:[-13,0]},
+      {k:'GND',sn:'GND',o:[-13,-4]},
+      {k:'VCC',sn:'VCC',o:[13,0]}
+    ]},
+
+  { id:'drv', name:'TB6612FNG 驱动板', sub:'双 H 桥 · 仅用 A 通道',
+    shape:{w:24,h:20}, pos:[60,60],
+    pins:[
+      {k:'PWMA',sn:'PWMA',o:[-12,9.1]},
+      {k:'AIN1',sn:'AIN1',o:[-12,6.5]},
+      {k:'AIN2',sn:'AIN2',o:[-12,3.9]},
+      {k:'STBY',sn:'STBY',o:[-12,1.3]},
+      {k:'BIN1',sn:'BIN1',o:[-12,-1.3]},
+      {k:'BIN2',sn:'BIN2',o:[-12,-3.9]},
+      {k:'PWMB',sn:'PWMB',o:[-12,-6.5]},
+      {k:'L_GND',sn:'GND',o:[-12,-9.1]},
+      {k:'VM',   sn:'VM',  o:[12,9.1]},
+      {k:'VCC',  sn:'VCC', o:[12,6.5]},
+      {k:'R_GND',sn:'GND', o:[12,3.9]},
+      {k:'AO1',  sn:'AO1', o:[12,1.3]},
+      {k:'AO2',  sn:'AO2', o:[12,-1.3]},
+      {k:'BO2',  sn:'BO2', o:[12,-3.9]},
+      {k:'BO1',  sn:'BO1', o:[12,-6.5]},
+      {k:'R_GND2',sn:'GND',o:[12,-9.1]}
+    ]},
+
+  { id:'mp', name:'MP1584EN 可调降压模块', sub:'7.4V → 5V · 用前先调到 5V',
+    shape:{w:24,h:14}, pos:[-160,60],
+    pins:[
+      {k:'INP', sn:'IN+', o:[-12,4]},
+      {k:'INN', sn:'IN-', o:[-12,-4]},
+      {k:'OUTP',sn:'OUT+',o:[12,4]},
+      {k:'OUTN',sn:'OUT-',o:[12,-4]}
+    ]},
+
+  { id:'sw', name:'长按 3s 开关机模块', sub:'长按开 / 长按关',
+    shape:{w:24,h:16}, pos:[-320,60],
+    pins:[
+      {k:'UP',  sn:'U+',  o:[-12,5]},
+      {k:'UN',  sn:'U-',  o:[-12,-5]},
+      {k:'OUTP',sn:'OUT+',o:[12,5]},
+      {k:'OUTN',sn:'OUT-',o:[12,-5]},
+      {k:'SW1', sn:'SW',  o:[-4,8]},
+      {k:'SW2', sn:'SW',  o:[4,8]},
+      {k:'XSW1',sn:'SW+', o:[-4,-8]},
+      {k:'XSW2',sn:'SW−', o:[4,-8]}
+    ]},
+
+  { id:'pcm', name:'2S 7.4V 锂电池保护板', sub:'过充 / 过放 / 短路 / 6A',
+    shape:{w:24,h:16}, pos:[-500,60],
+    pins:[
+      {k:'BP',sn:'B+',o:[-12,5]},
+      {k:'BM',sn:'BM',o:[-12,0]},
+      {k:'BN',sn:'B-',o:[-12,-5]},
+      {k:'PP',sn:'P+',o:[12,5]},
+      {k:'PN',sn:'P-',o:[12,-5]}
+    ]},
+
+  { id:'chg', name:'2S 锂电池充电模块', sub:'Type-C 5V → 8.4V',
+    shape:{w:26,h:14}, pos:[-500,300],
+    pins:[
+      {k:'BP',  sn:'B+', o:[-8,7]},
+      {k:'BM',  sn:'BM', o:[0,7]},
+      {k:'BN',  sn:'B-', o:[8,7]},
+      {k:'VIN', sn:'VIN',o:[13,3]},
+      {k:'CGND',sn:'GND',o:[13,-3]}
+    ]},
+
+  { id:'pot', name:'直滑电位器 45mm B10K', sub:'滑条调速',
+    shape:{w:10,h:34}, pos:[330,320],
+    pins:[
+      {k:'P1',sn:'1',o:[-5,9]},
+      {k:'P2',sn:'2',o:[-5,0]},
+      {k:'P3',sn:'3',o:[-5,-9]}
+    ]},
+
+  { id:'pwr', name:'电源开关键', sub:'轻触 6×6',
+    shape:{w:8,h:8}, pos:[-320,300],
+    pins:[
+      {k:'B1',sn:'1',o:[-4,4]},
+      {k:'B2',sn:'2',o:[4,4]}
+    ]},
+
+  { id:'btn', name:'模式切换按键', sub:'轻触 6×6',
+    shape:{w:8,h:8}, pos:[-160,-230],
+    pins:[
+      {k:'B1',sn:'1',o:[-4,4]},
+      {k:'B2',sn:'2',o:[4,4]}
+    ]},
+
+  { id:'b1', name:'电芯 1', sub:'103450 3.7V 单节',
+    shape:{w:44,h:22}, pos:[-640,140],
+    pins:[
+      {k:'NEG',sn:'−',o:[22,-6]},
+      {k:'POS',sn:'+',o:[22,6]}
+    ]},
+
+  { id:'b2', name:'电芯 2', sub:'103450 3.7V 单节',
+    shape:{w:44,h:22}, pos:[-640,20],
+    pins:[
+      {k:'NEG',sn:'−',o:[22,-6]},
+      {k:'POS',sn:'+',o:[22,6]}
+    ]},
+
+  { id:'mot', name:'JGB37-520 减速电机', sub:'6V · 减速比 56 · 霍尔 AB 相 · PH2.0 座',
+    shape:{w:30,h:46}, pos:[230,60],
+    pins:[
+      {k:'M_PLUS', sn:'红 M+', o:[-15,16]},
+      {k:'M_MINUS',sn:'白 M−', o:[-15,11]},
+      {k:'VCC',    sn:'蓝 5V', o:[-15,6]},
+      {k:'GND',    sn:'黑 GND',o:[-15,1]},
+      {k:'ENC_A',  sn:'黄 A',  o:[-15,-4]},
+      {k:'ENC_B',  sn:'绿 B',  o:[-15,-9]}
+    ]}
+];
+
+// ============================================================
+// 连线表（引脚级）
+// ============================================================
+const C_74='#ff4d4d', C_GND='#4a4a4a', C_5V='#ffb020', C_PWM='#b06bff',
+      C_ADC='#25c8c8', C_EA='#38c26b', C_EB='#8ae04a', C_MOT='#ffd400',
+      C_KEY='#9aa6b5', C_MID='#e0e0e0', C_FLASH='#66d9ff';
+
+const WIRES = [
+  // 电芯串 2S；充电板接保护板 P+/P-（走保护 FET 路径才能激活保护 IC，接 B+/B- 会绕过保护）
+  ['b1.NEG','pcm.BN', C_GND],
+  ['b1.POS','pcm.BM', C_MID],
+  ['b2.NEG','pcm.BM', C_MID],
+  ['b2.POS','pcm.BP', C_74],
+  ['pcm.PP','chg.BP', C_74],
+  ['pcm.BM','chg.BM', C_MID],
+  ['pcm.PN','chg.BN', C_GND],
+  // 保护板输出 → 开关机输入
+  ['pcm.PP','sw.UP',  C_74],
+  ['pcm.PN','sw.UN',  C_GND],
+  // 开关机输出 7.4V → TB6612 VM / MP1584 IN+
+  ['sw.OUTP','drv.VM', C_74],
+  ['sw.OUTP','mp.INP', C_74],
+  ['sw.OUTN','mp.INN', C_GND],
+  // 5V 分配（MP1584 OUT+）
+  ['mp.OUTP','mcu.T_VCC1', C_5V],
+  ['mp.OUTP','drv.VCC',    C_5V],
+  ['mp.OUTP','drv.STBY',   C_5V],
+  ['mp.OUTP','mot.VCC',    C_5V],
+  ['mp.OUTP','pot.P1',     C_5V],
+  // GND 分配（MP1584 OUT−）
+  ['mp.OUTN','mcu.T_GND1', C_GND],
+  ['mp.OUTN','drv.R_GND',  C_GND],
+  ['mp.OUTN','mot.GND',    C_GND],
+  ['mp.OUTN','pot.P3',     C_GND],
+  ['mp.OUTN','btn.B2',     C_GND],
+  // 电机大电流地回路：开关机 OUT− 直连 TB6612 GND（22AWG，回流不穿过 MP1584）
+  ['sw.OUTN','drv.R_GND',  C_GND],
+  // MCU → TB6612 控制信号
+  ['mcu.P54','drv.PWMA', C_PWM],
+  ['mcu.P55','drv.AIN1', C_PWM],
+  ['mcu.P37','drv.AIN2', C_PWM],
+  // TB6612 B 通道未用：BIN1/BIN2 接地，避免输入悬空
+  ['drv.BIN1','drv.R_GND', C_GND],
+  ['drv.BIN2','drv.R_GND', C_GND],
+  // TB6612 → 电机动力
+  ['drv.AO1','mot.M_PLUS',  C_MOT],
+  ['drv.AO2','mot.M_MINUS', C_MOT],
+  // 编码器 → MCU
+  ['mot.ENC_A','mcu.P32', C_EA],
+  ['mot.ENC_B','mcu.P33', C_EB],
+  // 电位器滑条 → ADC
+  ['pot.P2','mcu.P10', C_ADC],
+  // 按键
+  ['btn.B1','mcu.P11', C_KEY],
+  ['pwr.B1','sw.SW1',  C_KEY],
+  ['pwr.B2','sw.SW2',  C_KEY],
+  // CH340 USB-TTL → MCU（仅烧录用。板子丝印的 TX/RX 是"芯片自己的收发脚"含义：TX=P3.1、RX=P3.0）
+  // 所以必须交叉：模块 TXD→板 RX(P3.0)、模块 RXD→板 TX(P3.1)、GND 共地；VCC 不接
+  ['ttl.TXD','mcu.RX',    C_FLASH],
+  ['ttl.RXD','mcu.TX',    C_FLASH],
+  ['ttl.GND','mcu.R_GND', C_GND]
+];
+
+// ============================================================
+// 排版参数
+// ============================================================
+const PITCH_H = 14;  // 上下两条边上相邻引脚的间距
+const PITCH_V = 18;  // 左右两条边上相邻引脚的间距
+const PAD     = 12;  // 引脚离方框角的最小留白
+const MINW    = 44, MINH = 28;
+const STUB    = 7;   // 引脚伸出方框的长度
+
+const connectedPins = new Set();
+WIRES.forEach(w=>{ connectedPins.add(w[0]); connectedPins.add(w[1]); });
+
+const SHORT = {
+  mcu:'MCU', drv:'TB6612', mp:'MP1584', sw:'开关机模块', pcm:'2S 保护板',
+  chg:'2S 充电板', pot:'直滑电位器', btn:'模式键', pwr:'电源键',
+  b1:'电芯 1', b2:'电芯 2', mot:'减速电机', ttl:'CH340'
+};
+
+// 清单里读得懂的名字（重名引脚加 #1/#2）
+const pinLabel = {};
+COMPS.forEach(c=>{
+  const total = {}, seen = {};
+  c.pins.forEach(p=>{ total[p.sn] = (total[p.sn]||0) + 1; });
+  c.pins.forEach(p=>{
+    let txt = (SHORT[c.id] || c.name) + ' ' + p.sn;
+    if(total[p.sn] > 1){ seen[p.sn] = (seen[p.sn]||0) + 1; txt += '#' + seen[p.sn]; }
+    pinLabel[c.id + '.' + p.k] = txt;
+  });
+});
+
+// 判定引脚长在哪条边（按实物相对位置；正好在角上时优先落在上下边）
+function sideOf(o, shape){
+  const rx = Math.abs(o[0]) / (shape.w/2);
+  const ry = Math.abs(o[1]) / (shape.h/2);
+  if(ry >= rx - 1e-9) return o[1] < 0 ? 'bottom' : 'top';
+  return o[0] < 0 ? 'left' : 'right';
+}
+
+// ============================================================
+// 计算方框大小与引脚落点（屏幕坐标：X 向右、Y 向下）
+// ============================================================
+const boxes = [];
+const pinPt = {};
+const pinOrder = {};
+
+COMPS.forEach(c=>{
+  const bySide = {left:[], right:[], top:[], bottom:[]};
+  c.pins.forEach(p => bySide[sideOf(p.o, c.shape)].push(p));
+
+  const need = (s, pitch) => bySide[s].length ? (bySide[s].length-1)*pitch + 2*PAD : 0;
+  const w = Math.max(c.shape.w, need('top',PITCH_H), need('bottom',PITCH_H), MINW);
+  const h = Math.max(c.shape.h, need('left',PITCH_V), need('right',PITCH_V), MINH);
+
+  const cx = c.pos[0], cy = c.pos[1];
+  boxes.push({id:c.id, name:c.name, sub:c.sub, x:cx - w/2, y:-(cy + h/2), w, h});
+
+  const ids = [];
+  const place = (list, side, pitch)=>{
+    // 上下边按 o[x] 升序 → 屏幕由左到右；左右边按 o[y] 升序 → 屏幕由下到上
+    const sorted = list.slice().sort((a,b)=>
+      (side==='top'||side==='bottom') ? a.o[0]-b.o[0] : a.o[1]-b.o[1]);
+    const n = sorted.length, span = (n-1)*pitch;
+    sorted.forEach((p,i)=>{
+      const off = n > 1 ? (-span/2 + i*pitch) : 0;
+      let ex, ey, dir;
+      if(side==='top'){         ex = cx + off; ey = -(cy + h/2); dir = [0,-1]; }
+      else if(side==='bottom'){ ex = cx + off; ey = -(cy - h/2); dir = [0, 1]; }
+      else if(side==='left'){   ex = cx - w/2; ey = -(cy + off); dir = [-1,0]; }
+      else {                    ex = cx + w/2; ey = -(cy + off); dir = [ 1,0]; }
+      const key = c.id + '.' + p.k;
+      pinPt[key] = {x: ex + dir[0]*STUB, y: ey + dir[1]*STUB, dir, sn:p.sn, i,
+                    used: connectedPins.has(key)};
+      ids.push(key);
+    });
+  };
+  place(bySide.top, 'top', PITCH_H);
+  place(bySide.bottom, 'bottom', PITCH_H);
+  place(bySide.left, 'left', PITCH_V);
+  place(bySide.right, 'right', PITCH_V);
+  pinOrder[c.id] = ids;
+});
+
+// ============================================================
+// SVG 基础
+// ============================================================
+const svg = document.getElementById('svg');
+const NS = 'http://www.w3.org/2000/svg';
+const el = (tag, attrs, parent)=>{
+  const e = document.createElementNS(NS, tag);
+  for(const k in attrs) e.setAttribute(k, attrs[k]);
+  if(parent) parent.appendChild(e);
+  return e;
+};
+
+let minX=1e9, maxX=-1e9, minY=1e9, maxY=-1e9;
+boxes.forEach(b=>{
+  minX = Math.min(minX, b.x); maxX = Math.max(maxX, b.x + b.w);
+  minY = Math.min(minY, b.y); maxY = Math.max(maxY, b.y + b.h);
+});
+const PAD_X = 74, PAD_Y = 58;
+const baseVb = { x:minX-PAD_X, y:minY-PAD_Y,
+                 w:(maxX-minX)+2*PAD_X, h:(maxY-minY)+2*PAD_Y };
+let vb = Object.assign({}, baseVb);
+const setVb = ()=> svg.setAttribute('viewBox',
+  vb.x.toFixed(1)+' '+vb.y.toFixed(1)+' '+vb.w.toFixed(1)+' '+vb.h.toFixed(1));
+setVb();
+
+const gBox  = el('g', {}, svg);
+const gWire = el('g', {}, svg);
+const gHit  = el('g', {}, svg);
+const gPin  = el('g', {}, svg);
+
+// 给文字加一块底色，避免被线路压住看不清
+function putChip(txt, fill, op){
+  const bb = txt.getBBox();
+  const r = el('rect', {x:bb.x-3.5, y:bb.y-2, width:bb.width+7, height:bb.height+4,
+                        rx:3, fill, opacity:op}, txt.parentNode);
+  txt.parentNode.insertBefore(r, txt);
+}
+
+// ============================================================
+// 画方框
+// ============================================================
+boxes.forEach(b=>{
+  const g = el('g', {}, gBox);
+  el('rect', {class:'pbox', x:b.x, y:b.y, width:b.w, height:b.h, rx:3,
+              fill:'#1b232e'}, g);
+  const t = el('text', {class:'cname', x:b.x + b.w/2, y:b.y + b.h/2}, g);
+  t.textContent = SHORT[b.id] || b.id;
+  putChip(t, '#1b232e', 0.9);
+  const ti = el('title', {}, g);
+  ti.textContent = b.name + (b.sub ? '（' + b.sub + '）' : '');
+});
+
+// ============================================================
+// 走线：直线不撞别的方框 → 平滑曲线；撞了 → 走横平竖直的绕行线
+// ============================================================
+function segHitsRect(x1,y1,x2,y2,r){
+  let t0 = 0, t1 = 1;
+  const dx = x2-x1, dy = y2-y1;
+  const p = [-dx, dx, -dy, dy];
+  const q = [x1-r.x, (r.x+r.w)-x1, y1-r.y, (r.y+r.h)-y1];
+  for(let i=0;i<4;i++){
+    if(p[i] === 0){ if(q[i] < 0) return false; continue; }
+    const t = q[i]/p[i];
+    if(p[i] < 0) t0 = Math.max(t0, t); else t1 = Math.min(t1, t);
+    if(t0 > t1) return false;
+  }
+  return true;
+}
+const shrunken = boxes.map(b=>({x:b.x+1, y:b.y+1, w:b.w-2, h:b.h-2}));
+function polyClear(pts){
+  for(let i=0;i<pts.length-1;i++){
+    const p = pts[i], q = pts[i+1];
+    for(const r of shrunken){
+      if(segHitsRect(p[0], p[1], q[0], q[1], r)) return false;
+    }
+  }
+  return true;
+}
+function polyLen(pts){
+  let L = 0;
+  for(let i=0;i<pts.length-1;i++)
+    L += Math.abs(pts[i+1][0]-pts[i][0]) + Math.abs(pts[i+1][1]-pts[i][1]);
+  return L;
+}
+function roundPath(pts, rad){
+  const p = [pts[0]];
+  for(let i=1;i<pts.length;i++){
+    const a = p[p.length-1], b = pts[i];
+    if(Math.abs(a[0]-b[0]) > 0.5 || Math.abs(a[1]-b[1]) > 0.5) p.push(b);
+  }
+  if(p.length < 2) return null;
+  let d = 'M'+p[0][0]+','+p[0][1];
+  for(let i=1;i<p.length-1;i++){
+    const a = p[i-1], c = p[i], b = p[i+1];
+    const d1 = Math.hypot(c[0]-a[0], c[1]-a[1]), d2 = Math.hypot(b[0]-c[0], b[1]-c[1]);
+    const r = Math.min(rad, d1/2, d2/2);
+    const ax = c[0]+(a[0]-c[0])/d1*r, ay = c[1]+(a[1]-c[1])/d1*r;
+    const bx = c[0]+(b[0]-c[0])/d2*r, by = c[1]+(b[1]-c[1])/d2*r;
+    d += ' L'+ax+','+ay+' Q'+c[0]+','+c[1]+' '+bx+','+by;
+  }
+  const e = p[p.length-1];
+  return d + ' L'+e[0]+','+e[1];
+}
+
+function bezierD(A, B){
+  const dx = B.x-A.x, dy = B.y-A.y, L = Math.hypot(dx,dy) || 1;
+  const k = Math.max(16, Math.min(72, L*0.33));
+  return 'M'+A.x+','+A.y+
+         ' C'+(A.x+A.dir[0]*k)+','+(A.y+A.dir[1]*k)+
+         ' '+(B.x+B.dir[0]*k)+','+(B.y+B.dir[1]*k)+
+         ' '+B.x+','+B.y;
+}
+
+function routeD(aKey, bKey, idx){
+  const A = pinPt[aKey], B = pinPt[bKey];
+  const ownA = aKey.split('.')[0], ownB = bKey.split('.')[0];
+  const jit = ((idx % 5) - 2) * 4;          // 让同源的多根线错开
+
+  const blocked = boxes.some((b,k)=> b.id !== ownA && b.id !== ownB &&
+      segHitsRect(A.x, A.y, B.x, B.y, {x:b.x-6, y:b.y-6, w:b.w+12, h:b.h+12}));
+  if(!blocked) return bezierD(A, B);        // 不打搅任何方框，直接走弧线
+
+  // 候选通道：贴着每个方框的外沿走，另加起终点的横竖通道
+  const cands = [];
+  boxes.forEach(b=>{
+    cands.push(['h', b.y - 16 + jit], ['h', b.y + b.h + 16 + jit]);
+    cands.push(['v', b.x - 16 + jit], ['v', b.x + b.w + 16 + jit]);
+  });
+  cands.push(['h', A.y + jit], ['v', A.x + jit]);
+
+  let best = null, bestLen = 1e9;
+  cands.forEach(([kind, L])=>{
+    let pts;
+    if(kind === 'h'){
+      if(Math.abs(B.x - A.x) < 1) return;
+      pts = [[A.x, A.y], [A.x, L], [B.x, L], [B.x, B.y]];
+    } else {
+      if(Math.abs(B.y - A.y) < 1) return;
+      pts = [[A.x, A.y], [L, A.y], [L, B.y], [B.x, B.y]];
+    }
+    if(!polyClear(pts)) return;
+    const len = polyLen(pts) + 40;          // 加一点绕行代价，优先走直线
+    if(len < bestLen){ bestLen = len; best = pts; }
+  });
+
+  return best ? roundPath(best, 16) : bezierD(A, B);
+}
+
+const wireEls = [];
+WIRES.forEach((w,i)=>{
+  const d = routeD(w[0], w[1], i);
+  const path = el('path', {class:'wire', d, stroke:w[2], 'stroke-width':2.1}, gWire);
+  el('path', {class:'hit', d, 'data-i':i}, gHit);
+  wireEls.push({path});
+});
+
+// ============================================================
+// 引脚（圆点 + 丝印标签；上下边标签分两行错开）
+// ============================================================
+const pinEls = {};
+COMPS.forEach(c=>{
+  pinOrder[c.id].forEach(key=>{
+    const p = pinPt[key];
+    const dot = el('circle', {cx:p.x, cy:p.y, r:p.used ? 2.8 : 2.4,
+      fill:p.used ? '#ffd98a' : '#5f6d80', stroke:'#0b0e13', 'stroke-width':0.8}, gPin);
+    let tx = p.x, ty = p.y, anchor = 'middle';
+    if(p.dir[0] < 0){ tx = p.x - 8; anchor = 'end'; }
+    else if(p.dir[0] > 0){ tx = p.x + 8; anchor = 'start'; }
+    else if(p.dir[1] < 0){ ty = p.y - (p.i % 2 ? 27 : 9); }
+    else { ty = p.y + (p.i % 2 ? 33 : 15); }
+    const lbl = el('text', {class:'plbl ' + (p.used ? 'on' : 'off'), x:tx, y:ty,
+      'text-anchor':anchor}, gPin);
+    lbl.textContent = p.sn;
+    putChip(lbl, '#0b0e13', 0.75);
+    pinEls[key] = {dot, lbl, used:p.used};
+  });
+});
+
+// ============================================================
+// 引脚三态：全部展现 → 只展现使用的 → 全部隐藏
+// ============================================================
+const PIN_STATES = [
+  {t:'引脚：全部展现',     show:() => true},
+  {t:'引脚：仅展现使用的', show:u => u},
+  {t:'引脚：全部隐藏',     show:() => false}
+];
+let pinState = 0;
+const pinBtn = document.getElementById('pinBtn');
+
+function applyPinState(){
+  const st = PIN_STATES[pinState];
+  for(const key in pinEls){
+    const e = pinEls[key], on = st.show(e.used);
+    e.dot.style.display = on ? '' : 'none';
+    const chip = e.lbl.previousSibling;
+    if(chip && chip.tagName === 'rect') chip.style.display = on ? '' : 'none';
+    e.lbl.style.display = on ? '' : 'none';
+  }
+}
+pinBtn.addEventListener('click', ()=>{
+  pinState = (pinState + 1) % PIN_STATES.length;
+  pinBtn.textContent = PIN_STATES[pinState].t;
+  applyPinState();
+});
+applyPinState();
+
+// ============================================================
+// 接线清单
+// ============================================================
+const listBody = document.getElementById('listBody');
+const listItems = [];
+WIRES.forEach((w,i)=>{
+  const div = document.createElement('div');
+  div.className = 'witem';
+  div.innerHTML = '<i style="background:'+w[2]+'"></i><span><b>'+
+                  pinLabel[w[0]]+'</b> → '+pinLabel[w[1]]+'</span>';
+  div.addEventListener('pointerenter', ()=>{ hoverIdx = i; refresh(); });
+  div.addEventListener('pointerleave', ()=>{ if(hoverIdx === i){ hoverIdx = -1; refresh(); } });
+  div.addEventListener('click', ()=>{ lockIdx = (lockIdx === i) ? -1 : i; refresh(); });
+  listBody.appendChild(div);
+  listItems.push(div);
+});
+
+// ============================================================
+// 高亮交互
+// ============================================================
+const tipEl = document.getElementById('tip');
+let hoverIdx = -1, lockIdx = -1;
+
+function applyHighlight(i){
+  wireEls.forEach((w, idx)=>{
+    const on = (i < 0) || (idx === i);
+    w.path.setAttribute('opacity', on ? 1 : 0.05);
+    w.path.setAttribute('stroke-width', idx === i ? 3.6 : 2.1);
+  });
+  for(const key in pinEls) pinEls[key].dot.setAttribute('r', pinEls[key].used ? 2.8 : 2.4);
+  if(i >= 0){
+    [WIRES[i][0], WIRES[i][1]].forEach(key=>{
+      if(pinEls[key]) pinEls[key].dot.setAttribute('r', 5.2);
+    });
+  }
+}
+
+function refresh(){
+  const i = (lockIdx >= 0) ? lockIdx : hoverIdx;
+  applyHighlight(i);
+  listItems.forEach((elm,k)=> elm.classList.toggle('on', k === i));
+  if(i >= 0){
+    tipEl.textContent = pinLabel[WIRES[i][0]] + '  →  ' + pinLabel[WIRES[i][1]];
+    tipEl.style.display = 'block';
+    listItems[i].scrollIntoView({block:'nearest'});
+  } else {
+    tipEl.style.display = 'none';
+  }
+}
+
+gHit.addEventListener('pointerover', e=>{
+  if(dragging) return;
+  const i = +e.target.getAttribute('data-i');
+  if(i !== hoverIdx){ hoverIdx = i; refresh(); }
+});
+svg.addEventListener('pointerleave', ()=>{
+  if(hoverIdx !== -1){ hoverIdx = -1; refresh(); }
+});
+addEventListener('keydown', e=>{
+  if(e.key === 'Escape' && lockIdx >= 0){ lockIdx = -1; refresh(); }
+});
+
+// ============================================================
+// 缩放 / 平移 / 复位
+// ============================================================
+let dragging = false;
+let dragStart = null;
+
+svg.addEventListener('pointerdown', e=>{
+  dragStart = {x:e.clientX, y:e.clientY, vx:vb.x, vy:vb.y};
+  dragging = true;
+  svg.classList.add('panning');
+});
+addEventListener('pointermove', e=>{
+  if(!dragStart) return;
+  const r = svg.getBoundingClientRect();
+  vb.x = dragStart.vx - (e.clientX - dragStart.x) * vb.w / r.width;
+  vb.y = dragStart.vy - (e.clientY - dragStart.y) * vb.h / r.height;
+  setVb();
+});
+addEventListener('pointerup', ()=>{
+  dragStart = null;
+  setTimeout(()=>{ dragging = false; svg.classList.remove('panning'); }, 0);
+});
+
+svg.addEventListener('wheel', e=>{
+  e.preventDefault();
+  const r = svg.getBoundingClientRect();
+  const px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
+  const s = Math.exp(e.deltaY * 0.0016);
+  const nw = vb.w * s, nh = vb.h * s;
+  if(nw < 160 || nw > baseVb.w * 4) return;
+  const ax = vb.x + px * vb.w, ay = vb.y + py * vb.h;
+  vb.x = ax - px * nw; vb.y = ay - py * nh; vb.w = nw; vb.h = nh;
+  setVb();
+}, {passive:false});
+
+svg.addEventListener('dblclick', ()=>{
+  vb = Object.assign({}, baseVb);
+  setVb();
+  if(lockIdx >= 0){ lockIdx = -1; refresh(); }
+});
+
+// 显示控制 + 接线清单：整块显示 / 隐藏
+const panelToggle = document.getElementById('panelToggle');
+const sideEl = document.getElementById('side');
+panelToggle.addEventListener('click', ()=>{
+  const hidden = sideEl.classList.toggle('hidden');
+  panelToggle.textContent = hidden ? '显示面板' : '隐藏面板';
+});
+</script>
+</body>
+</html>

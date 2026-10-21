@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>电气玩具 · 3D 预览 v0.1（外壳 + 外部细节）</title>
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:#0b0e13;
+    font-family:"Segoe UI","Microsoft YaHei",sans-serif;color:#e8edf2}
+  #app{position:absolute;inset:0}
+  canvas{display:block}
+  #labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .lbl{position:absolute;left:0;top:0;white-space:nowrap;pointer-events:none;
+    font-size:11px;line-height:1.45;padding:2px 6px;border-radius:4px;
+    background:rgba(11,14,19,.8);border:1px solid #2a323c;color:#cfe0f5}
+  .lbl.hi{color:#ffd98a;border-color:#4a4030;background:rgba(30,24,10,.85)}
+  .lbl.blue{color:#9fc4e8;border-color:#33445c;background:rgba(14,26,44,.85)}
+  .lbl.dim{color:#93a3b6;border-color:#2a323c;border-style:dashed;background:rgba(11,14,19,.7)}
+
+  #title{position:absolute;top:12px;left:16px;z-index:5;pointer-events:none}
+  #title h1{margin:0;font-size:17px;font-weight:600}
+  #title p{margin:4px 0 0;font-size:11px;color:#8a99ad;width:430px;line-height:1.65}
+
+  #stateTag{position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:6;
+    padding:6px 16px;border-radius:7px;font-size:13px;font-weight:600;letter-spacing:.5px;
+    background:rgba(31,111,235,.9);color:#fff;box-shadow:0 4px 18px rgba(0,0,0,.45);
+    pointer-events:none;transition:.2s}
+  #stateTag.exp{background:rgba(232,178,58,.92);color:#241c08}
+
+  #panel{position:absolute;top:12px;right:12px;z-index:5;background:rgba(20,25,32,.88);
+    border:1px solid #2a323c;border-radius:10px;padding:12px 14px;min-width:228px;
+    backdrop-filter:blur(6px);box-shadow:0 6px 22px rgba(0,0,0,.4);max-height:92vh;overflow-y:auto}
+  #panel h2{margin:0 0 8px;font-size:12.5px;color:#7fb3ff;border-bottom:1px solid #2a323c;padding-bottom:6px}
+  #panel .row{margin:6px 0;font-size:12px;color:#b9c6d6}
+  #panel button{background:#1d2530;color:#d6dde6;border:1px solid #39434f;border-radius:5px;
+    padding:6px 8px;cursor:pointer;font-size:11.5px;transition:.15s}
+  #panel button:hover{background:#2a3543;border-color:#4a90e2;color:#fff}
+  #panel button.active{background:#1f6feb;border-color:#4a90e2;color:#fff}
+  #panel .grp{margin:10px 0 0;padding-top:9px;border-top:1px dashed #2a323c}
+  #panel .chk{display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;padding:3px 0;color:#cbd6e2}
+  #panel .chk input{margin:0;cursor:pointer}
+  #panel .chk.hi{color:#ffd98a}
+  #panel .chk.hi input{accent-color:#e8b23a}
+  #expRange{width:100%;margin:2px 0 0;accent-color:#1f6feb}
+  .lg{display:flex;flex-wrap:wrap;gap:5px 10px;margin-top:4px}
+  .lg span{display:flex;align-items:center;gap:5px;font-size:10.5px;color:#9aa8b8}
+  .lg i{width:12px;height:12px;border-radius:3px;display:block;flex:0 0 auto}
+  .notes{font-size:10.5px;color:#8a99ad;line-height:1.6;margin-top:4px}
+
+  #panelToggle{position:fixed;right:12px;bottom:12px;z-index:8;background:#1f6feb;color:#fff;
+    border:1px solid #4a90e2;border-radius:6px;padding:7px 12px;font-size:12px;font-weight:600;
+    cursor:pointer;box-shadow:0 6px 22px rgba(0,0,0,.4);transition:.15s}
+  #panelToggle:hover{background:#2a7ff5}
+  #panel.hidden{display:none}
+
+  #hint{position:absolute;bottom:12px;left:16px;z-index:5;font-size:11px;color:#7a8696;
+    background:rgba(20,25,32,.7);padding:6px 10px;border-radius:6px;border:1px solid #2a323c}
+  #hint b{color:#9bc}
+  #loading{position:absolute;inset:0;background:#0b0e13;z-index:20;display:flex;
+    align-items:center;justify-content:center;flex-direction:column;transition:.4s}
+  #loading .spin{width:40px;height:40px;border:3px solid #2a323c;border-top-color:#4a90e2;
+    border-radius:50%;animation:r 1s linear infinite}
+  #loading p{margin-top:12px;font-size:12px;color:#7a8696}
+  @keyframes r{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="labels"></div>
+
+<div id="title">
+  <h1>电气玩具 · 3D 预览 v0.1</h1>
+  <p>外壳 + 外部细节（内部电机/电池默认隐藏）。夹具按「方案 C」：两个半圆爪由压簧常态压紧，
+    柱体从侧面推入时把爪顶开、到位后弹回夹住 —— 无需任何操作件。</p>
+</div>
+
+<div id="stateTag">组装完成</div>
+
+<div id="panel">
+  <h2>状态</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
+    <button id="bAsm" class="active">组装完成</button>
+    <button id="bExp">爆炸视图</button>
+  </div>
+  <div class="row" style="margin-top:9px">爆炸程度 <span id="expVal" style="color:#9fc4e8">0%</span></div>
+  <input type="range" id="expRange" min="0" max="100" value="0">
+
+  <div class="grp">
+    <div class="row">视角</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
+      <button data-view="iso" class="active">等轴</button>
+      <button data-view="back">转轴面</button>
+      <button data-view="front">控制面</button>
+      <button data-view="top">俯视</button>
+    </div>
+  </div>
+
+  <div class="grp">
+    <label class="chk hi"><input type="checkbox" id="cLabel" checked>显示零件名称</label>
+    <label class="chk"><input type="checkbox" id="cAxis" checked>显示装配轴线</label>
+    <label class="chk hi"><input type="checkbox" id="cShell" checked>显示外壳（半透明）</label>
+    <label class="chk"><input type="checkbox" id="cInner">显示内部件（示意）</label>
+    <label class="chk"><input type="checkbox" id="cRot">自动旋转</label>
+  </div>
+
+  <div class="grp">
+    <div class="row">图例</div>
+    <div class="lg">
+      <span><i style="background:#6fa8dc"></i>外壳</span>
+      <span><i style="background:#9fc4e8"></i>卷轴筒 Ø20</span>
+      <span><i style="background:#bfa071"></i>柱体 Ø30</span>
+      <span><i style="background:#f6ad55"></i>半圆爪</span>
+      <span><i style="background:#8a6a3a"></i>直棒</span>
+      <span><i style="background:#ffd9a0"></i>销 / 压簧</span>
+      <span><i style="background:#3b3f45"></i>硅胶内衬</span>
+      <span><i style="background:#b8c0cc"></i>Type-C</span>
+    </div>
+  </div>
+
+  <div class="grp">
+    <div class="notes">
+      · 外壳暂按整体半透明表示，上盖/下盖分割线待定<br>
+      · 砂布走带 / 打磨机构未表示（走带方式未定）<br>
+      · 内部件位置为示意：电机/齿轮按 v0.1，电池与洞洞板待定
+    </div>
+  </div>
+</div>
+
+<button id="panelToggle">隐藏面板</button>
+
+<div id="hint"><b>左键拖</b>=旋转 · <b>右键拖</b>=平移 · <b>滚轮</b>=缩放 · <b>R</b>=重置</div>
+<div id="loading"><div class="spin"></div><p>加载中…</p></div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "./lib/three.module.js",
+    "three/addons/": "./lib/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from './lib/OrbitControls.js';
+
+/* ============================================================
+   坐标系：Z 轴朝上，单位 mm，与三视图一致
+   盒体：X 0→86（深，转轴从 X=86 面伸出）· Y −52→52（宽 104）· Z 0→74（高）
+   ============================================================ */
+const BOX = { w: 104, d: 86, h: 74 };          // w=Y 宽, d=X 深, h=Z 高
+const DRUM = { r: 10, len: 50, x0: 86, x1: 136, y: 30, z: 37 };   // 卷轴筒 Ø20 ×50
+const COL  = { r: 15, len: 150, x: 105, zMid: 65 };               // 柱体 Ø30 ×150（竖直）
+const JAW  = { x0: 64, x1: 108, sec: 8, y: 19, z: 62 };           // 爪臂：∥转轴(X)
+const CRAD = { rOut: 16.4, rLine: 15.05, h: 10 };                  // 半圆爪 R + 硅胶内衬
+
+const BOXD = BOX.d / 2;                                            // 43
+const SHIFT = new THREE.Vector3(-BOXD, 0, -BOX.h / 2);             // 让盒体居中
+
+/* ---------------- 场景 ---------------- */
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0b0e13);
+
+const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 1, 5000);
+camera.up.set(0, 0, 1);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+document.getElementById('app').appendChild(renderer.domElement);
+
+const ctrl = new OrbitControls(camera, renderer.domElement);
+ctrl.enableDamping = true; ctrl.dampingFactor = 0.08; ctrl.autoRotateSpeed = 1.1;
+
+const root = new THREE.Group();
+root.position.copy(SHIFT);
+scene.add(root);
+
+/* 视角预设（已按 root 平移后的世界坐标） */
+const VIEWS = {
+  iso:   { pos: [ 340, -430, 310], tgt: [ 25,   0, 25] },
+  back:  { pos: [ 540,  -90, 140], tgt: [ 45,   0, 35] },
+  front: { pos: [-390,  -60,  40], tgt: [ 10,   0, 25] },
+  top:   { pos: [  30,  -70, 440], tgt: [ 12,   0, 20] }
+};
+function setView(k){
+  const v = VIEWS[k]; if (!v) return;
+  camera.position.set(...v.pos);
+  ctrl.target.set(...v.tgt);
+  ctrl.update();
+}
+
+/* ---------------- 灯光 / 地面 ---------------- */
+scene.add(new THREE.AmbientLight(0x556070, 1.25));
+const key = new THREE.DirectionalLight(0xffffff, 1.35); key.position.set(420, -560, 760); scene.add(key);
+const fill = new THREE.DirectionalLight(0x88aaff, 0.45); fill.position.set(-520, 420, 320); scene.add(fill);
+const rim  = new THREE.DirectionalLight(0xffaa66, 0.30); rim.position.set(240, 520, -380); scene.add(rim);
+
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(3000, 3000),
+  new THREE.MeshStandardMaterial({ color: 0x0e1218, roughness: 0.95, metalness: 0.05 }));
+ground.rotation.x = 0; ground.position.z = -72; scene.add(ground);
+const grid = new THREE.GridHelper(900, 22, 0x243040, 0x161d26);
+grid.rotation.x = Math.PI / 2; grid.position.z = -71.5; scene.add(grid);
+
+/* ---------------- 材质 ---------------- */
+const M = {
+  shell:  new THREE.MeshStandardMaterial({ color: 0x6fa8dc, roughness: .25, metalness: .1,
+            transparent: true, opacity: .15, side: THREE.DoubleSide, depthWrite: false }),
+  drum:   new THREE.MeshStandardMaterial({ color: 0x9fc4e8, roughness: .38, metalness: .35 }),
+  axle:   new THREE.MeshStandardMaterial({ color: 0xc8d4e2, roughness: .3, metalness: .8 }),
+  bearing:new THREE.MeshStandardMaterial({ color: 0x59636f, roughness: .35, metalness: .85 }),
+  column: new THREE.MeshStandardMaterial({ color: 0xbfa071, roughness: .72, metalness: .05 }),
+  jaw:    new THREE.MeshStandardMaterial({ color: 0xf6ad55, roughness: .55, metalness: .15 }),
+  bar:    new THREE.MeshStandardMaterial({ color: 0x8a6a3a, roughness: .65, metalness: .1 }),
+  line:   new THREE.MeshStandardMaterial({ color: 0x3b3f45, roughness: .95, metalness: .0 }),
+  steel:  new THREE.MeshStandardMaterial({ color: 0xffd9a0, roughness: .3, metalness: .75 }),
+  panel:  new THREE.MeshStandardMaterial({ color: 0x243040, roughness: .6, metalness: .2 }),
+  btn:    new THREE.MeshStandardMaterial({ color: 0x9fc4e8, roughness: .5, metalness: .2 }),
+  usbc:   new THREE.MeshStandardMaterial({ color: 0xb8c0cc, roughness: .3, metalness: .9 }),
+  dark:   new THREE.MeshStandardMaterial({ color: 0x141a21, roughness: .9, metalness: .05 }),
+  motor:  new THREE.MeshStandardMaterial({ color: 0x7d8794, roughness: .45, metalness: .7 }),
+  gear:   new THREE.MeshStandardMaterial({ color: 0xd8c98a, roughness: .4, metalness: .65 }),
+  cell:   new THREE.MeshStandardMaterial({ color: 0x2f6f5b, roughness: .6, metalness: .1 })
+};
+
+/* 尺寸标注用的小工具 */
+function cyl(r1, r2, h, seg, axis, open, thetaStart, thetaLen){
+  const g = new THREE.CylinderGeometry(r1, r2, h, seg, 1, !!open, thetaStart || 0, thetaLen || Math.PI * 2);
+  if (axis === 'x') g.rotateZ(-Math.PI / 2);
+  if (axis === 'z') g.rotateX(Math.PI / 2);
+  return g;
+}
+function box(w, h, d){ return new THREE.BoxGeometry(w, h, d); }
+function mesh(g, m, x, y, z){ const o = new THREE.Mesh(g, m); o.position.set(x, y, z); return o; }
+function edges(parent, g, color, op){
+  parent.add(new THREE.LineSegments(new THREE.EdgesGeometry(g),
+    new THREE.LineBasicMaterial({ color: color, transparent: true, opacity: op === undefined ? .55 : op })));
+}
+
+/* ============================================================
+   零件注册：每个零件一个 Group（子件用绝对坐标），
+   爆炸时整体沿 exp 偏移平移，t 从 0 → 1 平滑过渡
+   ============================================================ */
+const PARTS = [];
+const labelLayer = document.getElementById('labels');
+function reg(group, name, anchor, exp, cls){
+  root.add(group);
+  const el = document.createElement('div');
+  el.className = 'lbl ' + (cls || '');
+  el.textContent = name;
+  labelLayer.appendChild(el);
+  const axis = makeAxis(anchor, exp);
+  const p = { g: group, name, anchor: new THREE.Vector3(...anchor), exp: new THREE.Vector3(...exp), el, axis, visible: true };
+  PARTS.push(p);
+  return p;
+}
+function makeAxis(anchor, exp){
+  const a = new THREE.Vector3(...anchor), e = new THREE.Vector3(...exp);
+  if (e.lengthSq() < 1) return null;
+  const g = new THREE.BufferGeometry().setFromPoints([a, a.clone().add(e)]);
+  const l = new THREE.Line(g, new THREE.LineDashedMaterial({
+    color: 0x4a90e2, dashSize: 6, gapSize: 5, transparent: true, opacity: 0 }));
+  l.computeLineDistances(); l.visible = false;
+  root.add(l); return l;
+}
+
+/* ---------------- 1. 外壳 ---------------- */
+const gShell = new THREE.Group();
+{
+  const g = box(BOX.d, BOX.w, BOX.h);
+  gShell.add(mesh(g, M.shell, BOXD, 0, BOX.h / 2));
+  const e = new THREE.LineSegments(new THREE.EdgesGeometry(g),
+    new THREE.LineBasicMaterial({ color: 0x7fb3ff, transparent: true, opacity: .5 }));
+  e.position.set(BOXD, 0, BOX.h / 2);
+  gShell.add(e);
+  // 面板上的两个支点槽（竖直向）
+  for (const s of [-1, 1]) {
+    const slot = mesh(box(3, 5, 26), M.dark, BOX.d, s * JAW.y, JAW.z);
+    gShell.add(slot);
+  }
+  // Type-C 开孔（左侧壁）
+  gShell.add(mesh(box(9, 3, 7), M.dark, 60, -BOX.w / 2, 22));
+}
+const pShell = reg(gShell, '外壳（半透明）', [BOXD, 0, BOX.h + 6], [0, 0, 0], 'dim');
+
+/* ---------------- 2. 控制面（2 按键 + 滑动电位器） ---------------- */
+const gCtrl = new THREE.Group();
+{
+  const ys = [-32, 23];                       // 与三视图正视图一致
+  for (const y of ys) {
+    gCtrl.add(mesh(cyl(4.2, 4.2, 6, 24, 'x'), M.btn, -3, y, 57));      // 按键帽（伸出 -X）
+    gCtrl.add(mesh(box(6, 9, 9), M.dark, 3, y, 57));                     // 键体
+  }
+  gCtrl.add(mesh(box(3, 46, 12), M.dark, .6, 1, 25));                    // 滑条行程槽 45mm
+  gCtrl.add(mesh(box(8, 12, 20), M.btn, -3.6, 1, 25));                   // 滑块帽
+  gCtrl.add(mesh(box(1.6, 1.6, 10), M.panel, 0, 1, 25));                 // 槽底衬托
+}
+const pCtrl = reg(gCtrl, '控制面板：2 按键 + 滑动电位器', [0, 0, 40], [-95, 0, 0], 'blue');
+
+/* ---------------- 3. 卷轴筒 ×2（Ø20，伸出 50） + 轴 + 轴承 ---------------- */
+function buildDrum(sy){
+  const g = new THREE.Group();
+  const body = mesh(cyl(DRUM.r, DRUM.r, DRUM.len, 32, 'x'), M.drum,
+                    (DRUM.x0 + DRUM.x1) / 2, sy * DRUM.y, DRUM.z);
+  g.add(body);
+  // 两端端面倒角环
+  for (const x of [DRUM.x0 + 1.5, DRUM.x1 - 1.5])
+    g.add(mesh(cyl(DRUM.r + .8, DRUM.r + .8, 3, 32, 'x'), M.axle, x, sy * DRUM.y, DRUM.z));
+  // 轴 Ø6（从盒内齿轮一直穿到筒端）
+  g.add(mesh(cyl(3, 3, 118, 20, 'x'), M.axle, 78, sy * DRUM.y, DRUM.z));
+  // 轴承 6×13×4（嵌在面板上）
+  g.add(mesh(cyl(6.5, 6.5, 4.5, 24, 'x'), M.bearing, 84.5, sy * DRUM.y, DRUM.z));
+  return g;
+}
+const pDrumL = reg(buildDrum(-1), '卷轴筒 Ø20 ×2（伸出 50）', [111, -DRUM.y, DRUM.z + 14], [95, -12, 0]);
+const pDrumR = reg(buildDrum( 1), '轴 Ø6 + 轴承 6×13×4',        [111,  DRUM.y, DRUM.z + 14], [95,  12, 0]);
+
+/* ---------------- 4. 双爪（直棒 + 半圆爪 + 硅胶内衬） ---------------- */
+function buildJaw(sy){
+  const g = new THREE.Group();
+  g.add(mesh(box(JAW.x1 - JAW.x0, JAW.sec, JAW.sec), M.bar,
+             (JAW.x0 + JAW.x1) / 2, sy * JAW.y, JAW.z));                 // 直棒 ∥ X
+  // 半圆爪：开口朝内侧（−Y 或 +Y 半圈）
+  const t0 = sy < 0 ? -Math.PI / 2 : Math.PI / 2;
+  g.add(mesh(cyl(CRAD.rOut, CRAD.rOut, CRAD.h, 40, 'z', true, t0, Math.PI), M.jaw, COL.x, 0, JAW.z));
+  g.add(mesh(cyl(CRAD.rLine, CRAD.rLine, CRAD.h - 1, 40, 'z', true, t0, Math.PI), M.line, COL.x, 0, JAW.z));
+  return g;
+}
+const pJawL = reg(buildJaw(-1), '左爪：直棒 + 半圆爪（凹侧朝内）', [88, -JAW.y, JAW.z + 12], [70, -48, 0]);
+const pJawR = reg(buildJaw( 1), '右爪：直棒 + 半圆爪（凹侧朝内）', [88,  JAW.y, JAW.z + 12], [70,  48, 0]);
+
+/* ---------------- 5. 支点销 ×2（⊥棒体，插面板竖直槽） ---------------- */
+const gPinL = new THREE.Group();
+gPinL.add(mesh(cyl(2.6, 2.6, 26, 18), M.steel, BOX.d, -JAW.y, JAW.z));
+const gPinR = new THREE.Group();
+gPinR.add(mesh(cyl(2.6, 2.6, 26, 18), M.steel, BOX.d, JAW.y, JAW.z));
+const pPinL = reg(gPinL, '支点销（⊥棒体 · 插面板竖直槽）', [BOX.d, -JAW.y, JAW.z - 16], [0, -26, 78], 'hi');
+const pPinR = reg(gPinR, '支点销 ×2', [BOX.d, JAW.y, JAW.z - 16], [0, 26, 78], 'hi');
+
+/* ---------------- 6. 压簧（两爪内端之间） ---------------- */
+const gSpring = new THREE.Group();
+{
+  const pts = [], N = 150, turns = 9, R = 4.2, xc = 82.5;
+  for (let i = 0; i <= N; i++) {
+    const t = i / N, ang = t * turns * Math.PI * 2;
+    pts.push(new THREE.Vector3(xc + R * Math.cos(ang), -JAW.y + 38 * t, JAW.z + R * Math.sin(ang)));
+  }
+  const curve = new THREE.CatmullRomCurve3(pts);
+  gSpring.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 240, 1.05, 8, false), M.steel));
+}
+const pSpring = reg(gSpring, '压簧（两爪内端之间 · 常态压紧）', [82.5, 0, JAW.z + 14], [58, 0, 62], 'hi');
+
+/* ---------------- 7. 柱体 Ø30 × 150（竖直） ---------------- */
+const gCol = new THREE.Group();
+{
+  gCol.add(mesh(cyl(COL.r, COL.r, COL.len, 40), M.column, COL.x, 0, COL.zMid));
+  gCol.add(mesh(cyl(COL.r + .3, COL.r + .3, 2, 40), M.line, COL.x, 0, COL.zMid + COL.len / 2));
+  gCol.add(mesh(cyl(COL.r + .3, COL.r + .3, 2, 40), M.line, COL.x, 0, COL.zMid - COL.len / 2));
+}
+const pCol = reg(gCol, '柱体 Ø30 × 150（待打磨工件 · 竖直）', [COL.x, 0, COL.zMid + COL.len / 2 + 4], [92, 0, 52]);
+
+/* ---------------- 8. Type-C（焊在充电板上，从左侧面露出） ---------------- */
+const gUsb = new THREE.Group();
+{
+  gUsb.add(mesh(box(8, 6, 9), M.usbc, 60, -BOX.w / 2 - 2, 22));
+  gUsb.add(mesh(box(6, 2, 7), M.dark, 60, -BOX.w / 2 - 2, 22));
+}
+const pUsb = reg(gUsb, 'Type-C（左侧面露出）', [60, -BOX.w / 2 - 10, 22], [0, -78, 0], 'blue');
+
+/* ---------------- 9. 内部件（默认隐藏 · 位置示意） ---------------- */
+const gInner = new THREE.Group();
+{
+  // 电机 JGB37-520：Ø37 × 59，轴向 ∥ X，中心 Y=0（按 v0.1）
+  gInner.add(mesh(cyl(18.5, 18.5, 59, 32, 'x'), M.motor, 48, 0, 37));
+  gInner.add(mesh(cyl(14, 14, 6, 24, 'x'), M.dark, 19, 0, 37));
+  gInner.add(mesh(cyl(3, 3, 16, 16, 'x'), M.axle, 10, 0, 37));
+  // 齿轮：主 z26（Y=0）+ 从 z22 ×2（Y=±30），m1.25 厚 8
+  const gears = [{ z: 26, r: 17.4, y: 0 }, { z: 22, r: 14.9, y: -30 }, { z: 22, r: 14.9, y: 30 }];
+  for (const gg of gears) {
+    const body = mesh(cyl(gg.r, gg.r, 8, gg.z, 'x'), M.gear, 14, gg.y, 37);
+    gInner.add(body);
+    const tooth = box(8, 2.6, 4.6);
+    const inst = new THREE.InstancedMesh(tooth, M.gear, gg.z);
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion();
+    for (let i = 0; i < gg.z; i++) {
+      const a = i / gg.z * Math.PI * 2;
+      q.setFromAxisAngle(new THREE.Vector3(1, 0, 0), a);
+      m4.compose(new THREE.Vector3(14, gg.y + (gg.r + 1.1) * Math.cos(a), 37 + (gg.r + 1.1) * Math.sin(a)), q, new THREE.Vector3(1, 1, 1));
+      inst.setMatrixAt(i, m4);
+    }
+    gInner.add(inst);
+  }
+  // 电池 2S（103450 单节 50×34×10，两节并排）
+  for (const s of [-1, 1])
+    gInner.add(mesh(box(50, 33, 10), M.cell, 34, s * 20, 12));
+  gInner.visible = false;
+}
+root.add(gInner);
+const pMotor = reg(new THREE.Group(), '电机 JGB37-520（示意 · 按 v0.1）', [48, 0, 14], [0, 0, -80], 'dim');
+pMotor.g.visible = false;
+const pGear = reg(new THREE.Group(), '齿轮 z26 + z22×2（示意）', [14, 0, 20], [72, 0, -52], 'dim');
+pGear.g.visible = false;
+const pCell = reg(new THREE.Group(), '电池 2S（示意 · 位置待定）', [34, 0, 0], [0, 0, -60], 'dim');
+pCell.g.visible = false;
+
+/* 内部件标签跟随内部件的显隐 */
+const INNER_LABELS = [pMotor, pGear, pCell];
+
+/* ============================================================
+   UI
+   ============================================================ */
+let expT = 0, expGoal = 0, showLabel = true, showAxis = true, autoRot = false;
+const stateTag = document.getElementById('stateTag');
+const expVal = document.getElementById('expVal');
+const bAsm = document.getElementById('bAsm');
+const bExp = document.getElementById('bExp');
+const expRange = document.getElementById('expRange');
+
+function setExp(t, instant){
+  expGoal = t;
+  if (instant) expT = t;
+  const pct = Math.round(t * 100);
+  expVal.textContent = pct + '%';
+  expRange.value = pct;
+  bExp.classList.toggle('active', t > .5);
+  bAsm.classList.toggle('active', t <= .5);
+  stateTag.textContent = t > .5 ? '爆炸视图' : '组装完成';
+  stateTag.classList.toggle('exp', t > .5);
+}
+bAsm.onclick = () => setExp(0);
+bExp.onclick = () => setExp(1);
+expRange.oninput = e => setExp(+e.target.value / 100, true);
+
+document.getElementById('cLabel').onchange = e => { showLabel = e.target.checked; };
+document.getElementById('cAxis').onchange  = e => { showAxis = e.target.checked; };
+document.getElementById('cShell').onchange = e => { pShell.g.visible = e.target.checked; };
+document.getElementById('cInner').onchange = e => {
+  const v = e.target.checked;
+  gInner.visible = v;
+  for (const p of INNER_LABELS) { p.visible = v; p.g.visible = v; }
+};
+document.getElementById('cRot').onchange = e => { autoRot = e.target.checked; ctrl.autoRotate = autoRot; };
+
+for (const b of document.querySelectorAll('#panel [data-view]'))
+  b.onclick = () => {
+    setView(b.dataset.view);
+    document.querySelectorAll('#panel [data-view]').forEach(x => x.classList.toggle('active', x === b));
+  };
+
+const panel = document.getElementById('panel');
+const panelToggle = document.getElementById('panelToggle');
+panelToggle.onclick = () => {
+  panel.classList.toggle('hidden');
+  panelToggle.textContent = panel.classList.contains('hidden') ? '显示面板' : '隐藏面板';
+};
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+addEventListener('keydown', e => {
+  if (e.key === 'r' || e.key === 'R') setView('iso');
+});
+
+/* ============================================================
+   标注投影
+   ============================================================ */
+const tmp = new THREE.Vector3();
+function updateLabels(){
+  for (const p of PARTS) {
+    const on = showLabel && p.g.visible && (p.visible !== false);
+    if (!on) { p.el.style.display = 'none'; continue; }
+    tmp.copy(p.anchor); p.g.localToWorld(tmp); tmp.project(camera);
+    if (tmp.z > 1) { p.el.style.display = 'none'; continue; }
+    p.el.style.display = '';
+    p.el.style.left = (tmp.x * .5 + .5) * innerWidth + 'px';
+    p.el.style.top  = (-tmp.y * .5 + .5) * innerHeight + 'px';
+    p.el.style.transform = 'translate(-50%,-120%)';
+  }
+}
+
+/* ============================================================
+   主循环
+   ============================================================ */
+setView('iso');
+setExp(0, true);
+const clock = new THREE.Clock();
+let first = true;
+
+function tick(){
+  requestAnimationFrame(tick);
+  const dt = Math.min(clock.getDelta(), .05);
+
+  // 爆炸/组装平滑过渡
+  if (Math.abs(expT - expGoal) > .001) {
+    expT += (expGoal - expT) * Math.min(1, dt * 6);
+    if (Math.abs(expT - expGoal) < .002) expT = expGoal;
+    for (const p of PARTS) p.g.position.copy(p.exp).multiplyScalar(expT);
+    for (const p of PARTS) {
+      const on = showAxis && expT > .03 && p.visible !== false && !!p.axis;
+      if (p.axis) { p.axis.visible = on; p.axis.material.opacity = Math.min(.75, expT * .8); }
+    }
+  }
+
+  ctrl.update();
+  renderer.render(scene, camera);
+  scene.updateMatrixWorld();
+  updateLabels();
+
+  if (first) {
+    first = false;
+    const l = document.getElementById('loading');
+    l.style.opacity = 0; setTimeout(() => l.remove(), 420);
+  }
+}
+tick();
+</script>
+</body>
+</html>

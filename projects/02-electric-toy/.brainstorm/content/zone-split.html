@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>电气玩具 · 外壳设计 · 干湿分区</title>
+<style>
+  :root{
+    --bg:#0f1216; --panel:#171c22; --line:#2a323c; --txt:#e6ebf2; --sub:#93a1b0;
+    --wet:#2b6cb0; --wetbg:#152b43; --dry:#2f855a; --drybg:#14301f; --acc:#f6ad55;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);
+    font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;line-height:1.6}
+  .wrap{max-width:1080px;margin:0 auto;padding:28px 22px 60px}
+  h1{font-size:22px;margin:0 0 4px}
+  .sub{color:var(--sub);font-size:14px;margin-bottom:18px}
+  .inputbox{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 16px;margin-bottom:22px}
+  .inputbox h3{margin:0 0 8px;font-size:13px;color:var(--acc);letter-spacing:.5px}
+  .inputbox ul{margin:0;padding-left:18px;color:var(--sub);font-size:13px;columns:2;column-gap:26px}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .card{background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:14px;
+    cursor:pointer;transition:.16s}
+  .card:hover{border-color:#4a5666;transform:translateY(-2px)}
+  .card.sel{border-color:var(--acc);box-shadow:0 0 0 3px rgba(246,173,85,.18)}
+  .card h3{margin:10px 0 6px;font-size:15px}
+  .card p{margin:0;color:var(--sub);font-size:12.5px}
+  .tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:20px;background:#243040;color:#9fc4e8;margin-top:8px}
+  svg{display:block;width:100%;height:auto;background:#0b0e12;border-radius:8px}
+  .lbl{font:600 9px sans-serif}
+  .ask{margin-top:26px;padding:14px 16px;border-left:3px solid var(--acc);background:#171c22;border-radius:0 8px 8px 0;font-size:14px}
+  .ask b{color:var(--acc)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>电气玩具 · 外壳设计</h1>
+  <div class="sub">第 1 步 / 结构核心：打磨湿区 与 电子干区 怎么分区（三种剖面示意，点击选中）</div>
+
+  <div class="inputbox">
+    <h3>当前已知尺寸（作为设计输入）</h3>
+    <ul>
+      <li>工件：Ø30 × 150mm 圆柱</li>
+      <li>卷轴：筒 Ø20 / 轴颈 Ø6，两轴间距 60mm</li>
+      <li>齿轮区总宽 90mm → 盒内宽 ≥ 92mm</li>
+      <li>卷轴轴心低于工件顶端 90–100mm</li>
+      <li>砂布宽 50mm，行程 ±5cm</li>
+      <li>穿墙油封 8×16×5，轴承 6×13×4</li>
+      <li>电机 JGB37-520（约 Ø37 级）</li>
+      <li>电池 2×103450 + 5 块电路板</li>
+    </ul>
+  </div>
+
+  <div class="cards">
+    <div class="card" data-choice="a" onclick="pick(this)">
+      <svg viewBox="0 0 200 150">
+        <rect x="8" y="8" width="184" height="134" rx="6" fill="none" stroke="#3a4552" stroke-width="2"/>
+        <rect x="16" y="16" width="168" height="52" rx="4" fill="#152b43" stroke="#2b6cb0"/>
+        <text x="22" y="28" class="lbl" fill="#7fb4e8">湿区（上）· 打磨</text>
+        <circle cx="70" cy="48" r="11" fill="#1e4a72" stroke="#53a0e0"/>
+        <circle cx="128" cy="42" r="14" fill="#1e4a72" stroke="#53a0e0"/>
+        <line x1="82" y1="48" x2="114" y2="42" stroke="#53a0e0" stroke-width="1.5"/>
+        <text x="150" y="60" class="lbl" fill="#5c7290">水→排水孔</text>
+        <line x1="16" y1="74" x2="184" y2="74" stroke="#3a4552" stroke-width="2"/>
+        <text x="80" y="88" class="lbl" fill="#c08a4a">隔墙 + 油封</text>
+        <rect x="16" y="96" width="168" height="38" rx="4" fill="#14301f" stroke="#2f855a"/>
+        <text x="22" y="110" class="lbl" fill="#6ee7a0">干区（下）· 电路/电机</text>
+        <rect x="28" y="114" width="34" height="14" rx="2" fill="#1d4a30" stroke="#3ba86e"/>
+        <rect x="74" y="114" width="34" height="14" rx="2" fill="#1d4a30" stroke="#3ba86e"/>
+        <rect x="120" y="114" width="48" height="14" rx="2" fill="#1d4a30" stroke="#3ba86e"/>
+      </svg>
+      <h3>A · 上下分区</h3>
+      <p>湿区在上、干区在下，一层隔墙隔开。结构最紧凑、重力排水顺。</p>
+      <div class="tag">推荐 · 体积小</div>
+    </div>
+
+    <div class="card" data-choice="b" onclick="pick(this)">
+      <svg viewBox="0 0 200 150">
+        <rect x="8" y="8" width="184" height="134" rx="6" fill="none" stroke="#3a4552" stroke-width="2"/>
+        <rect x="16" y="16" width="88" height="118" rx="4" fill="#152b43" stroke="#2b6cb0"/>
+        <text x="22" y="28" class="lbl" fill="#7fb4e8">湿区（前/左）</text>
+        <circle cx="60" cy="60" r="11" fill="#1e4a72" stroke="#53a0e0"/>
+        <circle cx="60" cy="102" r="14" fill="#1e4a72" stroke="#53a0e0"/>
+        <line x1="104" y1="16" x2="104" y2="134" stroke="#3a4552" stroke-width="2"/>
+        <text x="88" y="74" class="lbl" fill="#c08a4a" transform="rotate(90 88 74)">隔墙+油封</text>
+        <rect x="112" y="16" width="72" height="118" rx="4" fill="#14301f" stroke="#2f855a"/>
+        <text x="118" y="28" class="lbl" fill="#6ee7a0">干区（后/右）</text>
+        <rect x="122" y="40" width="52" height="16" rx="2" fill="#1d4a30" stroke="#3ba86e"/>
+        <rect x="122" y="66" width="52" height="16" rx="2" fill="#1d4a30" stroke="#3ba86e"/>
+        <rect x="122" y="92" width="30" height="30" rx="3" fill="#1d4a30" stroke="#3ba86e"/>
+        <text x="156" y="112" class="lbl" fill="#5c7290">电机</text>
+      </svg>
+      <h3>B · 前后分区</h3>
+      <p>沿长边分隔，前面全湿、后面全干。密封面少、装配简单，但整体更宽。</p>
+      <div class="tag">装配简单</div>
+    </div>
+
+    <div class="card" data-choice="c" onclick="pick(this)">
+      <svg viewBox="0 0 200 150">
+        <rect x="8" y="8" width="88" height="72" rx="6" fill="#152b43" stroke="#2b6cb0"/>
+        <text x="16" y="22" class="lbl" fill="#7fb4e8">湿区模块</text>
+        <circle cx="42" cy="50" r="11" fill="#1e4a72" stroke="#53a0e0"/>
+        <circle cx="72" cy="46" r="12" fill="#1e4a72" stroke="#53a0e0"/>
+        <rect x="104" y="30" width="88" height="112" rx="6" fill="#14301f" stroke="#2f855a"/>
+        <text x="112" y="44" class="lbl" fill="#6ee7a0">干区模块（电子盒）</text>
+        <rect x="114" y="56" width="66" height="16" rx="2" fill="#1d4a30" stroke="#3ba86e"/>
+        <rect x="114" y="82" width="66" height="16" rx="2" fill="#1d4a30" stroke="#3ba86e"/>
+        <rect x="114" y="108" width="40" height="24" rx="3" fill="#1d4a30" stroke="#3ba86e"/>
+        <line x1="52" y1="80" x2="120" y2="30" stroke="#f6ad55" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <text x="60" y="112" class="lbl" fill="#c08a4a">可拆接口 / 油封轴</text>
+        <text x="12" y="100" class="lbl" fill="#5c7290">↑ 可整体取出清洗</text>
+      </svg>
+      <h3>C · 分体式</h3>
+      <p>湿区水槽与电子盒做成两个可拆模块，用油封轴贯通。清洗最方便，但零件最多。</p>
+      <div class="tag">易清洗</div>
+    </div>
+  </div>
+
+  <div class="ask">
+    看看上面三种<b>干湿分区</b>方案，点一个你倾向的；然后在终端里告诉我编号（A/B/C），或直接讲你的想法 —— 比如是否有接水盘、要不要可拆洗、整体大概多大。
+  </div>
+</div>
+<script>
+function pick(el){
+  document.querySelectorAll('.card').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+}
+</script>
+</body>
+</html>

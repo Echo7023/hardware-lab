@@ -10,26 +10,24 @@
 
 ## 代码与全部资料在哪
 
-**不在本仓库**，在独立仓库 [Echo7023/electric-toy](https://github.com/Echo7023/electric-toy)（含完整设计文档、接线图、外壳 3D 预览、SDCC 固件）。
+**就在本目录**（2026-10-21 从独立仓库 [Echo7023/electric-toy](https://github.com/Echo7023/electric-toy) 整体复制并入）。
+原仓库**已冻结归档**，只读、不再更新；**以后只改本目录这一份**，避免两边分叉。
 
-```powershell
-# 建议与 hardware-lab 放在同一层级，两边机器路径一致
-git clone https://github.com/Echo7023/electric-toy.git
-```
+本文件是「现在的入口」，原项目的交接文档保留为 [README-original.md](README-original.md)（内容未改动，内部链接仍有效）。
 
-拿到后**先读这几个文件**（按顺序）：
+**先读这几个文件**（按顺序）：
 
 | 文件 | 作用 |
 | --- | --- |
-| `README.md` | 唯一入口：硬件现状、引脚映射、外壳设计、文件地图 |
-| `进展与交接-2026-10-20.md` | 烧录失败全过程、已排除项、损坏判定、换板步骤 |
-| `上电前检查与接线修正.md` | 上电顺序、MP1584 校准、烧录前检查清单 |
-| `元件清单.md` | 采购清单 + 引脚速查（§7） |
-| `三个工作模式.md` | 固件逻辑与参数总表 |
-| `05-软件代码/main_sdcc.c` | 固件源码（SDCC）；`main_sdcc.hex` 是编译产物 |
+| [README-original.md](README-original.md) | 原项目唯一入口：硬件现状、引脚映射、外壳设计、文件地图 |
+| [进展与交接-2026-10-20.md](进展与交接-2026-10-20.md) | 烧录失败全过程、已排除项、损坏判定、换板步骤 |
+| [上电前检查与接线修正.md](上电前检查与接线修正.md) | 上电顺序、MP1584 校准、烧录前检查清单 |
+| [元件清单.md](元件清单.md) | 采购清单 + 引脚速查（§7） |
+| [三个工作模式.md](三个工作模式.md) | 固件逻辑与参数总表 |
+| [05-软件代码/main_sdcc.c](05-软件代码/main_sdcc.c) | 固件源码（SDCC）；`main_sdcc.hex` 是编译产物 |
 
-> 3D 页面（含 `import three`）必须走本地 HTTP，`file://` 会白屏：
-> `python -m http.server 8792 --bind 127.0.0.1`，再开 `http://127.0.0.1:8792/`。
+> 3D 页面（含 `import three`）必须走本地 HTTP，`file://` 会白屏。
+> 在本项目目录执行 `python -m http.server 8792 --bind 127.0.0.1`，再开 `http://127.0.0.1:8792/`。
 
 ## 当前状态
 
